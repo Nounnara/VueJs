@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>POS System - Vue + Tailwind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3"></script>
+  </head>
+  <body class="bg-gray-100" id="app">
+    <div id="app" class="p-6" v-cloak>
+      <div class="flex justify-between items-center mb-4">
+        <input
+          v-model="search"
+          type="text"
+          placeholder="Search..."
+          class="px-4 py-2 border rounded w-1/2"
+        />
+        <select v-model="selectedCategory" class="px-4 py-2 border rounded">
+          <option value="">All Categories</option>
+          <option v-for="cat in categories" :key="cat">{{ cat }}</option>
+        </select>
+        <button
+          @click="showCheckout = true"
+          class="bg-green-600 text-white px-4 py-2 rounded"
+        >
+          Cart ({{ cart.length }})
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div
+          v-for="product in filteredProducts"
+          :key="product.id"
+          class="bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer"
+          @click="showProduct(product)"
+        >
+          <img :src="product.image" class="h-40 object-contain mx-auto mb-2" />
+          <h3 class="text-lg font-bold">{{ product.title }}</h3>
+          <p class="text-sm text-gray-500 truncate">
+            {{ product.description }}
+          </p>
+          <p class="text-green-600 font-semibold mt-2">
+            ${{ product.price.toFixed(2) }}
+          </p>
+          <button
+            @click.stop="addToCart(product)"
+            class="mt-2 bg-blue-600 text-white px-3 py-1 rounded"
+          >
+            Add to Cart
+          </button>
+        </div>
+      </div>
+      <div
+        v-if="selectedProduct"
+        class="fixed right-0 top-0 w-1/3 h-full bg-white shadow-lg p-4 overflow-y-auto"
+      >
+        <button
+          class="float-right text-red-500 text-lg"
+          @click="selectedProduct = null"
+        >
+          &times;
+        </button>
+        <img
+          :src="selectedProduct.image"
+          class="h-48 mx-auto object-contain mb-4"
+        />
+        <h2 class="text-xl font-bold mb-2">{{ selectedProduct.title }}</h2>
+        <p class="text-gray-600 mb-2">{{ selectedProduct.description }}</p>
+        <p class="text-lg text-green-700 font-semibold">
+          ${{ selectedProduct.price.toFixed(2) }}
+        </p>
+        <button
+          class="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
+          @click="addToCart(selectedProduct)"
+        >
+          Add to Cart
+        </button>
+      </div>
+
+      <!-- Checkout Modal -->
+      <div
+        v-if="showCheckout"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+      >
+        <div class="bg-white p-6 rounded w-96">
+          <h2 class="text-xl font-bold mb-4">Checkout</h2>
+          <div v-if="cart.length">
+            <div
+              v-for="item in cart"
+              :key="item.id"
+              class="flex justify-between items-center mb-2"
+            >
+              <span>{{ item.title }}</span>
+              <span>${{ item.price.toFixed(2) }}</span>
+            </div>
+            <hr class="my-2" />
+            <p class="text-right font-bold">
+              Total: ${{ totalPrice.toFixed(2) }}
+            </p>
+            <button
+              class="mt-4 bg-green-600 text-white px-4 py-2 rounded w-full"
+              @click="checkout"
+            >
+              Confirm
+            </button>
+          </div>
+          <div v-else class="text-center text-gray-500">Cart is empty</div>
+          <button
+            class="mt-2 text-red-500 w-full"
+            @click="showCheckout = false"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const { createApp } = Vue;
+
+      createApp({
+        data() {
+          return {
+            products: [],
+            categories: [],
+            selectedCategory: "",
+            search: "",
+            cart: [],
+            selectedProduct: null,
+            showCheckout: false,
+          };
+        },
+        computed: {
+          filteredProducts() {
+            return this.products.filter((p) => {
+              const matchesCategory =
+                this.selectedCategory === "" ||
+                p.category === this.selectedCategory;
+              const matchesSearch = p.title
+                .toLowerCase()
+                .includes(this.search.toLowerCase());
+              return matchesCategory && matchesSearch;
+            });
+          },
+          totalPrice() {
+            return this.cart.reduce((sum, p) => sum + p.price, 0);
+          },
+        },
+        methods: {
+          fetchProducts() {
+            fetch("https://fakestoreapi.com/products")
+              .then((res) => res.json())
+              .then((data) => {
+                this.products = data;
+                this.categories = [...new Set(data.map((p) => p.category))];
+              });
+          },
+          addToCart(product) {
+            this.cart.push(product);
+          },
+          showProduct(product) {
+            this.selectedProduct = product;
+          },
+          checkout() {
+            alert("Purchase complete!");
+            this.cart = [];
+            this.showCheckout = false;
+          },
+        },
+        mounted() {
+          this.fetchProducts();
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>
